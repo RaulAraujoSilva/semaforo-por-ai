@@ -1,6 +1,7 @@
 import { useRef, useEffect, useState, useCallback } from 'react'
 import { SimulationEngine } from '../simulation/engine/SimulationEngine'
 import { CityRenderer } from '../rendering/CityRenderer'
+import type { CityTheme } from '../rendering/CityRenderer'
 import { RenderLoop } from '../rendering/RenderLoop'
 import { MetricsStore } from '../simulation/metrics/MetricsStore'
 import type { TrafficController, SimulationMetrics, SimulationConfig, CityConfig } from '../simulation/core/types'
@@ -11,6 +12,7 @@ interface UseSimulationOptions {
   seed: number
   config?: SimulationConfig
   cityConfig?: CityConfig
+  theme?: CityTheme
 }
 
 export function useSimulation(
@@ -37,7 +39,7 @@ export function useSimulation(
     const engine = new SimulationEngine(options.controller, config, cityConfig, options.seed)
     engineRef.current = engine
 
-    const cityRenderer = new CityRenderer(cityConfig, engine.intersections, engine.roads)
+    const cityRenderer = new CityRenderer(cityConfig, engine.intersections, engine.roads, options.theme)
     const store = metricsStoreRef.current
     store.reset()
 

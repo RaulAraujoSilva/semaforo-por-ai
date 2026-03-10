@@ -1,25 +1,57 @@
 import type { CityConfig, Intersection, Road } from '../simulation/core/types'
 
-const COLORS = {
-  background: '#0f0f23',
-  road: '#363652',
-  roadLine: '#4a4a6a',
-  avenue: '#3d3d5a',
-  sidewalk: '#252540',
-  building: '#16213e',
-  buildingLight: '#1a1a3e',
-  intersection: '#363652',
+export type CityTheme = 'default' | 'ai'
+
+interface CityColors {
+  background: string
+  road: string
+  roadLine: string
+  avenue: string
+  sidewalk: string
+  building: string
+  buildingLight: string
+  intersection: string
+  windowColor: string
+}
+
+const THEMES: Record<CityTheme, CityColors> = {
+  default: {
+    background: '#0f0f23',
+    road: '#363652',
+    roadLine: '#4a4a6a',
+    avenue: '#3d3d5a',
+    sidewalk: '#252540',
+    building: '#16213e',
+    buildingLight: '#1a1a3e',
+    intersection: '#363652',
+    windowColor: 'rgba(255, 220, 100,',
+  },
+  ai: {
+    background: '#0a1628',
+    road: '#2a3f52',
+    roadLine: '#3a5a6a',
+    avenue: '#304858',
+    sidewalk: '#1a2d3d',
+    building: '#0e2a3e',
+    buildingLight: '#12303e',
+    intersection: '#2a3f52',
+    windowColor: 'rgba(100, 220, 255,',
+  },
 }
 
 export class CityRenderer {
   private offscreenCanvas: OffscreenCanvas | null = null
   private cached = false
+  private colors: CityColors
 
   constructor(
     private config: CityConfig,
     private intersections: Intersection[],
-    private roads: Road[]
-  ) {}
+    private roads: Road[],
+    theme: CityTheme = 'default'
+  ) {
+    this.colors = THEMES[theme]
+  }
 
   invalidateCache(): void {
     this.cached = false
@@ -44,7 +76,7 @@ export class CityRenderer {
 
   private drawCity(ctx: OffscreenCanvasRenderingContext2D, width: number, height: number): void {
     // Background
-    ctx.fillStyle = COLORS.background
+    ctx.fillStyle = this.colors.background
     ctx.fillRect(0, 0, width, height)
 
     // Draw buildings (blocks between roads)
@@ -77,17 +109,17 @@ export class CityRenderer {
         const w = blockSize - roadWidth - buildingPadding * 2
         const h = blockSize - roadWidth - buildingPadding * 2
 
-        ctx.fillStyle = COLORS.building
+        ctx.fillStyle = this.colors.building
         ctx.fillRect(x, y, w, h)
 
         // Some lit windows
-        ctx.fillStyle = COLORS.buildingLight
+        ctx.fillStyle = this.colors.buildingLight
         const windowSize = 3
         const windowGap = 8
         for (let wx = x + 6; wx < x + w - 6; wx += windowGap) {
           for (let wy = y + 6; wy < y + h - 6; wy += windowGap) {
             if (Math.random() > 0.6) {
-              ctx.fillStyle = `rgba(255, 220, 100, ${0.2 + Math.random() * 0.3})`
+              ctx.fillStyle = `${this.colors.windowColor} ${0.2 + Math.random() * 0.3})`
               ctx.fillRect(wx, wy, windowSize, windowSize)
             }
           }
@@ -108,14 +140,14 @@ export class CityRenderer {
     const toX = padding + road.to.col * blockSize
     const toY = padding + road.to.row * blockSize
 
-    ctx.fillStyle = isAvenue ? COLORS.avenue : COLORS.road
+    ctx.fillStyle = isAvenue ? this.colors.avenue : this.colors.road
 
     if (road.direction === 'east' || road.direction === 'west') {
       const y = fromY - halfRoad
       const x = Math.min(fromX, toX)
       ctx.fillRect(x, y, blockSize, width)
       // Center line
-      ctx.strokeStyle = COLORS.roadLine
+      ctx.strokeStyle = this.colors.roadLine
       ctx.lineWidth = 1
       ctx.setLineDash([6, 4])
       ctx.beginPath()
@@ -128,7 +160,7 @@ export class CityRenderer {
       const y = Math.min(fromY, toY)
       ctx.fillRect(x, y, width, blockSize)
       // Center line
-      ctx.strokeStyle = COLORS.roadLine
+      ctx.strokeStyle = this.colors.roadLine
       ctx.lineWidth = 1
       ctx.setLineDash([6, 4])
       ctx.beginPath()
@@ -144,7 +176,7 @@ export class CityRenderer {
     const halfRoad = roadWidth / 2 + 2
     const { x, y } = intersection.worldPos
 
-    ctx.fillStyle = COLORS.intersection
+    ctx.fillStyle = this.colors.intersection
     ctx.fillRect(x - halfRoad, y - halfRoad, halfRoad * 2, halfRoad * 2)
 
     // Pedestrian crossing marks
@@ -168,7 +200,7 @@ export class CityRenderer {
     for (let row = 0; row < gridRows; row++) {
       const y = padding + row * blockSize
       const isAvenue = avenueRows.includes(row)
-      ctx.fillStyle = isAvenue ? COLORS.avenue : COLORS.road
+      ctx.fillStyle = isAvenue ? this.colors.avenue : this.colors.road
       const w = isAvenue ? roadWidth + 4 : roadWidth
       // Left edge
       ctx.fillRect(0, y - halfRoad, padding, w)
@@ -181,7 +213,7 @@ export class CityRenderer {
     for (let col = 0; col < gridCols; col++) {
       const x = padding + col * blockSize
       const isAvenue = avenueCols.includes(col)
-      ctx.fillStyle = isAvenue ? COLORS.avenue : COLORS.road
+      ctx.fillStyle = isAvenue ? this.colors.avenue : this.colors.road
       const w = isAvenue ? roadWidth + 4 : roadWidth
       // Top edge
       ctx.fillRect(x - halfRoad, 0, w, padding)

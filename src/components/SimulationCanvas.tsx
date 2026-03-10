@@ -1,5 +1,6 @@
 import { useRef, useEffect } from 'react'
 import { useSimulation } from '../hooks/useSimulation'
+import type { CityTheme } from '../rendering/CityRenderer'
 import type { TrafficController, SimulationMetrics } from '../simulation/core/types'
 
 interface SimulationCanvasProps {
@@ -9,11 +10,12 @@ interface SimulationCanvasProps {
   isRunning: boolean
   speed: number
   onMetrics?: (metrics: SimulationMetrics) => void
+  theme?: CityTheme
 }
 
-export function SimulationCanvas({ controller, seed, label, isRunning, speed, onMetrics }: SimulationCanvasProps) {
+export function SimulationCanvas({ controller, seed, label, isRunning, speed, onMetrics, theme }: SimulationCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
-  const sim = useSimulation(canvasRef, { controller, seed })
+  const sim = useSimulation(canvasRef, { controller, seed, theme })
 
   // Sync play/pause
   useEffect(() => {

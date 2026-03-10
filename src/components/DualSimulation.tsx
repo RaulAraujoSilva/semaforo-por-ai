@@ -126,6 +126,7 @@ export function DualSimulation() {
           isRunning={isRunning}
           speed={speed}
           onMetrics={handleAiMetrics}
+          theme="ai"
         />
       </div>
 
