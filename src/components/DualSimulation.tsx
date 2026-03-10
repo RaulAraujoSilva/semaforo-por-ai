@@ -1,10 +1,11 @@
-import { useState, useCallback, useMemo, useRef } from 'react'
+import { useState, useCallback, useRef, useEffect } from 'react'
 import { SimulationCanvas } from './SimulationCanvas'
 import { MetricsDashboard } from './MetricsDashboard'
 import { ComparisonChart } from './ComparisonChart'
 import { FixedTimingController } from '../simulation/controllers/FixedTimingController'
+import { DQNController } from '../simulation/controllers/DQNController'
 import { RuleBasedAIController } from '../simulation/controllers/RuleBasedAIController'
-import type { SimulationMetrics } from '../simulation/core/types'
+import type { TrafficController, SimulationMetrics } from '../simulation/core/types'
 
 const SPEEDS = [1, 2, 5, 10]
 
@@ -17,9 +18,27 @@ export function DualSimulation() {
   const fixedHistoryRef = useRef<SimulationMetrics[]>([])
   const aiHistoryRef = useRef<SimulationMetrics[]>([])
   const [, forceUpdate] = useState(0)
+  const [aiController, setAiController] = useState<TrafficController>(() => new RuleBasedAIController())
+  const [aiLabel, setAiLabel] = useState('IA Rule-Based')
+  const fixedController = useRef(new FixedTimingController()).current
 
-  const fixedController = useMemo(() => new FixedTimingController(), [])
-  const aiController = useMemo(() => new RuleBasedAIController(), [])
+  // Load DQN weights on mount
+  useEffect(() => {
+    fetch('./dqn-weights.json')
+      .then(res => {
+        if (!res.ok) throw new Error('No weights')
+        return res.json()
+      })
+      .then(data => {
+        const dqn = new DQNController(data)
+        setAiController(dqn)
+        setAiLabel('DQN (Deep RL)')
+        console.log('DQN weights loaded successfully')
+      })
+      .catch(() => {
+        console.log('DQN weights not found, using Rule-Based AI')
+      })
+  }, [])
 
   const handleFixedMetrics = useCallback((m: SimulationMetrics) => {
     setFixedMetrics(m)
@@ -103,7 +122,7 @@ export function DualSimulation() {
         <SimulationCanvas
           controller={aiController}
           seed={seed}
-          label="🤖 IA Adaptativa"
+          label={`🧠 ${aiLabel}`}
           isRunning={isRunning}
           speed={speed}
           onMetrics={handleAiMetrics}
